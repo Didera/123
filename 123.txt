@@ -1,0 +1,67 @@
+//database initalization
+
+spring.application.name= -------
+
+// spring.thymeleaf.cache=false
+
+spring.datasource.url=  - - - -  jdbc:h2:file:./data/flightsDB
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=update
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console 
+
+//service - business logic
+//model - getters,setters, constructors
+//controller - HTTP requests GET,SET,POST,DELETE
+//repository - Database access layer
+
+//fpr flight controller class
+
+@RestController
+@RequestMapping("/api/flights")
+public class FlightController {
+
+
+    @Autowired
+    private final FlightService flightService;
+
+
+    public FlightController(FlightService flightService) {
+        this.flightService = flightService;
+    }
+
+    @GetMapping
+    public List<Flight> getAllFlights() {
+        return flightService.getAllFlights();
+    }
+
+    @GetMapping("/{id}")
+    public Flight getFlightById(@PathVariable int id) {
+        return flightService.getFlightById(id);
+    }
+
+
+    @PostMapping("/add")
+    public void addFlight(@RequestBody Flight flight) {
+        flightService.addFlight(flight);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public void deleteFlight(@PathVariable int id){
+        flightService.deleteFlight(id);
+    }
+}
+
+//for flight repository
+
+
+@Repository
+public interface FlightReposiitory extends JpaRepository<Flight, Integer> {
+
+// save(S entity), saveAll(Iterable S entities), findByID(ID id), findAll(), count()
+}
+
