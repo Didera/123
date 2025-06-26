@@ -24,180 +24,123 @@ spring.h2.console.path=/h2-console
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class Flight {
+public class Airport {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int flightId;
+    private int AirportId;
 
-    private String flightNumber;
-    private String departure;
-    private String destination;
-    private LocalDateTime departureTime;
-    private LocalDateTime arrivalTime;
-    private String status;
+    private String Name;
+    private String Country;
+}
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class Flight {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int FlightId;
+
+    @ManyToOne
+    @JoinColumn(name = "origin_airport_id")
+    private Airport origin;
+
+    @ManyToOne
+    @JoinColumn(name = "destination_airport_id")
+    private Airport destination;
+
+    private Status status;
 
     @OneToMany(mappedBy = "flight")
-    @JsonManagedReference
     private List<Passenger> passengers;
 
-
 }
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 public class Passenger {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int passengerId;
+    private int PassengerId;
 
-    private String name;
-    private String passportNumber;
+    private String Name;
 
     @ManyToOne
-    @JoinColumn(name = "flight_id", nullable = false)
-    @JsonBackReference
+    @JoinColumn(name = "flightId")
     private Flight flight;
+}
 
+public enum Status {
+    SCHEDULED, DEPARTED, ARRIVED, DELAYED, CANCELLED
 }
 
 //repositories
-
 @Repository
-public interface FlightReposiitory extends JpaRepository<Flight, Integer> {
+public interface AirportRepository extends JpaRepository<Airport,Integer> {
+}
+public interface FlightRepository extends JpaRepository<Flight,Integer> {
+}
+public interface PassengerRepository extends JpaRepository<Passenger,Integer> {
 }
 
-@Repository
-public interface PassengerRepository extends JpaRepository<Passenger, Integer> {
-
-}
-
-//service
+//services
 
 @Service
 public class FlightService {
 
     @Autowired
-    private FlightReposiitory flightRepo;
+    private FlightRepository flightRepository;
 
-    public List<Flight> getAllFlights() {
-        return flightRepo.findAll();
+    public List<Flight> getAllFlights(){
+        return flightRepository.findAll();
     }
 
-    public Flight getFlightById(int id) {
-        return flightRepo.findById(id).orElse(null);
+    public Flight getFlightById(int id){
+        return flightRepository.findById(id).orElse(null);
     }
 
-    public void addFlight(Flight flight) {
-        flightRepo.save(flight);
+    public void addFlight(Flight flight){
+        flightRepository.save(flight);
     }
 
-    public void deleteFlight(int id){
-        flightRepo.deleteById(id);
+    public void deleteFLight(int id){
+        flightRepository.deleteById(id);
     }
-}
-@Service
-public class PassengerService {
-
-    @Autowired
-    private PassengerRepository passengerRepo;
-
-    public List<Passenger> getAllPassengers() {
-        return passengerRepo.findAll();
-    }
-
-    public Passenger getPassengerById(int id){
-        return passengerRepo.findById(id).orElse(null);
-    }
-
-    public void addPassenger(Passenger passenger){
-        passengerRepo.save(passenger);
-    }
-
-    public void deletePassenger(int id) {
-        passengerRepo.deleteById(id);
-    }
-
-
 }
 
 //controllers
-
 @RestController
-@RequestMapping("/api/flights")
+@RequestMapping("/api/flight")
 public class FlightController {
 
-
     @Autowired
-    private final FlightService flightService;
-
-
-    public FlightController(FlightService flightService) {
-        this.flightService = flightService;
-    }
+    private FlightService flightService;
 
     @GetMapping
-    public List<Flight> getAllFlights() {
+    public List<Flight> getAllFlights(){
         return flightService.getAllFlights();
     }
 
     @GetMapping("/{id}")
-    public Flight getFlightById(@PathVariable int id) {
+    public Flight getFlightById(@PathVariable int id){
         return flightService.getFlightById(id);
     }
 
-
     @PostMapping("/add")
-    public void addFlight(@RequestBody Flight flight) {
+    public void addFlight(@RequestBody Flight flight){
         flightService.addFlight(flight);
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("{id}")
     public void deleteFlight(@PathVariable int id){
-        flightService.deleteFlight(id);
+        flightService.deleteFLight(id);
     }
+
 }
-@RestController
-@RequestMapping("/api/passengers")
-public class PassengerController {
-    
-    private final PassengerService passengerService;
-
-    public PassengerController(PassengerService passengerService) {
-        this.passengerService = passengerService;
-    }
-
-    @GetMapping
-    public List<Passenger> getPassengers() {
-        return passengerService.getAllPassengers();
-    }
-
-    @GetMapping("/{id}")
-    public Passenger getPassengerById(@PathVariable int id){
-        return passengerService.getPassengerById(id);
-    }
-
-    @PostMapping("/add")
-    public void addPassenger(Passenger passenger){
-        passengerService.addPassenger(passenger);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public void deletePassenger(@PathVariable int id) {
-        passengerService.deletePassenger(id);
-    }
-}
-
-@Controller
-public class HomeController {
-
-    @GetMapping("/")
-    public String home(Model model){
-        model.addAttribute("foo", "foobarbaz");
-        return "index";
-    }
-}
-
 <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
