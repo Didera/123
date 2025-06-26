@@ -65,3 +65,99 @@ public interface FlightReposiitory extends JpaRepository<Flight, Integer> {
 // save(S entity), saveAll(Iterable S entities), findByID(ID id), findAll(), count()
 }
 
+//Potential Flight service code . Business logic
+
+@Service
+public class FlightService {
+    
+    @Autowired
+    private FlightRepository flightRepository;
+    
+    public List<Flight> getAllFlights() {
+        return flightRepository.findAll();
+    }
+    
+    public Optional<Flight> getFlightById(Long id) {
+        return flightRepository.findById(id);
+    }
+    
+    public Optional<Flight> getFlightByNumber(String flightNumber) {
+        return flightRepository.findByFlightNumber(flightNumber);
+    }
+    
+    public Flight createFlight(Flight flight) {
+        return flightRepository.save(flight);
+    }
+    
+    public Flight updateFlight(Long id, Flight flightDetails) {
+        Flight flight = flightRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
+        
+        flight.setFlightNumber(flightDetails.getFlightNumber());
+        flight.setAirline(flightDetails.getAirline());
+        flight.setOriginAirport(flightDetails.getOriginAirport());
+        flight.setDestinationAirport(flightDetails.getDestinationAirport());
+        flight.setDepartureTime(flightDetails.getDepartureTime());
+        flight.setArrivalTime(flightDetails.getArrivalTime());
+        flight.setStatus(flightDetails.getStatus());
+        flight.setAircraftType(flightDetails.getAircraftType());
+        
+        return flightRepository.save(flight);
+    }
+    
+    public Flight updateFlightLocation(Long id, Double latitude, Double longitude, 
+                                     Integer altitude, Integer speed) {
+        Flight flight = flightRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
+        
+        flight.setCurrentLatitude(latitude);
+        flight.setCurrentLongitude(longitude);
+        flight.setCurrentAltitude(altitude);
+        flight.setCurrentSpeed(speed);
+        
+        return flightRepository.save(flight);
+    }
+    
+    public Flight updateFlightStatus(Long id, FlightStatus status) {
+        Flight flight = flightRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
+        
+        flight.setStatus(status);
+        return flightRepository.save(flight);
+    }
+    
+    public void deleteFlight(Long id) {
+        flightRepository.deleteById(id);
+    }
+    
+    public List<Flight> getFlightsByAirline(String airline) {
+        return flightRepository.findByAirline(airline);
+    }
+    
+    public List<Flight> getFlightsByOrigin(String originAirport) {
+        return flightRepository.findByOriginAirport(originAirport);
+    }
+    
+    public List<Flight> getFlightsByDestination(String destinationAirport) {
+        return flightRepository.findByDestinationAirport(destinationAirport);
+    }
+    
+    public List<Flight> getFlightsByStatus(FlightStatus status) {
+        return flightRepository.findByStatus(status);
+    }
+    
+    public List<Flight> getFlightsByRoute(String origin, String destination) {
+        return flightRepository.findFlightsByRoute(origin, destination);
+    }
+    
+    public List<Flight> getFlightsByDateRange(LocalDateTime start, LocalDateTime end) {
+        return flightRepository.findFlightsByDepartureDateRange(start, end);
+    }
+}
+
+//  in src/main/resources/data.sql
+INSERT INTO flights (flight_number, airline, origin_airport, destination_airport, departure_time, arrival_time, status, aircraft_type) VALUES
+('AA101', 'American Airlines', 'JFK', 'LAX', '2024-06-27 08:00:00', '2024-06-27 11:30:00', 'SCHEDULED', 'Boeing 737'),
+('UA202', 'United Airlines', 'ORD', 'SFO', '2024-06-27 14:30:00', '2024-06-27 17:00:00', 'BOARDING', 'Airbus A320'),
+('DL303', 'Delta Airlines', 'ATL', 'MIA', '2024-06-27 09:15:00', '2024-06-27 11:45:00', 'IN_FLIGHT', 'Boeing 757'),
+('SW404', 'Southwest Airlines', 'DEN', 'PHX', '2024-06-27 16:00:00', '2024-06-27 17:30:00', 'DELAYED', 'Boeing 737');
