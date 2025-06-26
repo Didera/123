@@ -19,7 +19,109 @@ spring.h2.console.path=/h2-console
 //controller - HTTP requests GET,SET,POST,DELETE
 //repository - Database access layer
 
-//fpr flight controller class
+//models
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class Flight {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int flightId;
+
+    private String flightNumber;
+    private String departure;
+    private String destination;
+    private LocalDateTime departureTime;
+    private LocalDateTime arrivalTime;
+    private String status;
+
+    @OneToMany(mappedBy = "flight")
+    @JsonManagedReference
+    private List<Passenger> passengers;
+
+
+}
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+public class Passenger {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int passengerId;
+
+    private String name;
+    private String passportNumber;
+
+    @ManyToOne
+    @JoinColumn(name = "flight_id", nullable = false)
+    @JsonBackReference
+    private Flight flight;
+
+}
+
+//repositories
+
+@Repository
+public interface FlightReposiitory extends JpaRepository<Flight, Integer> {
+}
+
+@Repository
+public interface PassengerRepository extends JpaRepository<Passenger, Integer> {
+
+}
+
+//service
+
+@Service
+public class FlightService {
+
+    @Autowired
+    private FlightReposiitory flightRepo;
+
+    public List<Flight> getAllFlights() {
+        return flightRepo.findAll();
+    }
+
+    public Flight getFlightById(int id) {
+        return flightRepo.findById(id).orElse(null);
+    }
+
+    public void addFlight(Flight flight) {
+        flightRepo.save(flight);
+    }
+
+    public void deleteFlight(int id){
+        flightRepo.deleteById(id);
+    }
+}
+@Service
+public class PassengerService {
+
+    @Autowired
+    private PassengerRepository passengerRepo;
+
+    public List<Passenger> getAllPassengers() {
+        return passengerRepo.findAll();
+    }
+
+    public Passenger getPassengerById(int id){
+        return passengerRepo.findById(id).orElse(null);
+    }
+
+    public void addPassenger(Passenger passenger){
+        passengerRepo.save(passenger);
+    }
+
+    public void deletePassenger(int id) {
+        passengerRepo.deleteById(id);
+    }
+
+
+}
+
+//controllers
 
 @RestController
 @RequestMapping("/api/flights")
@@ -55,109 +157,85 @@ public class FlightController {
         flightService.deleteFlight(id);
     }
 }
+@RestController
+@RequestMapping("/api/passengers")
+public class PassengerController {
+    
+    private final PassengerService passengerService;
 
-//for flight repository
+    public PassengerController(PassengerService passengerService) {
+        this.passengerService = passengerService;
+    }
 
+    @GetMapping
+    public List<Passenger> getPassengers() {
+        return passengerService.getAllPassengers();
+    }
 
-@Repository
-public interface FlightReposiitory extends JpaRepository<Flight, Integer> {
+    @GetMapping("/{id}")
+    public Passenger getPassengerById(@PathVariable int id){
+        return passengerService.getPassengerById(id);
+    }
 
-// save(S entity), saveAll(Iterable S entities), findByID(ID id), findAll(), count()
-}
+    @PostMapping("/add")
+    public void addPassenger(Passenger passenger){
+        passengerService.addPassenger(passenger);
+    }
 
-//Potential Flight service code . Business logic
-
-@Service
-public class FlightService {
-    
-    @Autowired
-    private FlightRepository flightRepository;
-    
-    public List<Flight> getAllFlights() {
-        return flightRepository.findAll();
-    }
-    
-    public Optional<Flight> getFlightById(Long id) {
-        return flightRepository.findById(id);
-    }
-    
-    public Optional<Flight> getFlightByNumber(String flightNumber) {
-        return flightRepository.findByFlightNumber(flightNumber);
-    }
-    
-    public Flight createFlight(Flight flight) {
-        return flightRepository.save(flight);
-    }
-    
-    public Flight updateFlight(Long id, Flight flightDetails) {
-        Flight flight = flightRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
-        
-        flight.setFlightNumber(flightDetails.getFlightNumber());
-        flight.setAirline(flightDetails.getAirline());
-        flight.setOriginAirport(flightDetails.getOriginAirport());
-        flight.setDestinationAirport(flightDetails.getDestinationAirport());
-        flight.setDepartureTime(flightDetails.getDepartureTime());
-        flight.setArrivalTime(flightDetails.getArrivalTime());
-        flight.setStatus(flightDetails.getStatus());
-        flight.setAircraftType(flightDetails.getAircraftType());
-        
-        return flightRepository.save(flight);
-    }
-    
-    public Flight updateFlightLocation(Long id, Double latitude, Double longitude, 
-                                     Integer altitude, Integer speed) {
-        Flight flight = flightRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
-        
-        flight.setCurrentLatitude(latitude);
-        flight.setCurrentLongitude(longitude);
-        flight.setCurrentAltitude(altitude);
-        flight.setCurrentSpeed(speed);
-        
-        return flightRepository.save(flight);
-    }
-    
-    public Flight updateFlightStatus(Long id, FlightStatus status) {
-        Flight flight = flightRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Flight not found with id: " + id));
-        
-        flight.setStatus(status);
-        return flightRepository.save(flight);
-    }
-    
-    public void deleteFlight(Long id) {
-        flightRepository.deleteById(id);
-    }
-    
-    public List<Flight> getFlightsByAirline(String airline) {
-        return flightRepository.findByAirline(airline);
-    }
-    
-    public List<Flight> getFlightsByOrigin(String originAirport) {
-        return flightRepository.findByOriginAirport(originAirport);
-    }
-    
-    public List<Flight> getFlightsByDestination(String destinationAirport) {
-        return flightRepository.findByDestinationAirport(destinationAirport);
-    }
-    
-    public List<Flight> getFlightsByStatus(FlightStatus status) {
-        return flightRepository.findByStatus(status);
-    }
-    
-    public List<Flight> getFlightsByRoute(String origin, String destination) {
-        return flightRepository.findFlightsByRoute(origin, destination);
-    }
-    
-    public List<Flight> getFlightsByDateRange(LocalDateTime start, LocalDateTime end) {
-        return flightRepository.findFlightsByDepartureDateRange(start, end);
+    @DeleteMapping("/delete/{id}")
+    public void deletePassenger(@PathVariable int id) {
+        passengerService.deletePassenger(id);
     }
 }
 
-//  in src/main/resources/data.sql
-INSERT INTO flights (flight_number, airline, origin_airport, destination_airport, departure_time, arrival_time, status, aircraft_type) VALUES
-('AA101', 'American Airlines', 'JFK', 'LAX', '2024-06-27 08:00:00', '2024-06-27 11:30:00', 'SCHEDULED', 'Boeing 737'),
-('UA202', 'United Airlines', 'ORD', 'SFO', '2024-06-27 14:30:00', '2024-06-27 17:00:00', 'BOARDING', 'Airbus A320'),
-('DL303', 'Delta Airlines', 'ATL', 'MIA', '2024-06-27 09:15:00', '2024-06-27 11:45:00', 'IN_FLIGHT', 'Boeing 757'),
-('SW404', 'Southwest Airlines', 'DEN', 'PHX', '2024-06-27 16:00:00', '2024-06-27 17:30:00', 'DELAYED', 'Boeing 737');
+@Controller
+public class HomeController {
+
+    @GetMapping("/")
+    public String home(Model model){
+        model.addAttribute("foo", "foobarbaz");
+        return "index";
+    }
+}
+
+<dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
