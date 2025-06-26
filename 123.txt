@@ -141,6 +141,15 @@ public class FlightController {
     }
 
 }
+
+//custom queries
+
+@Query("SELECT f FROM Flight f WHERE f.status = ?1")
+List<Flight> findByStatus(String status);
+
+@Query("SELECT f FROM Flight f WHERE f.status = :status AND f.destination = :destination")
+List<Flight> findByStatusAndDestination(@Param("status") String status, @Param("destination") String destination);
+
 <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
